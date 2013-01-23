@@ -27,8 +27,8 @@ public class Window extends JFrame implements ActionListener {
     JPanel gamepanel = new JPanel();
     static JButton button[] = new JButton[9];
     JButton clicked;
-    
-    private int turn; //X's turn first
+    int didWin = 0, didTie = 0;
+    int turn; //X's turn first
     //private boolean winner = false;
     
     
@@ -69,7 +69,7 @@ public class Window extends JFrame implements ActionListener {
             //System.out.println("This is i: " + i);
             button[i] = new JButton();
             button[i].setActionCommand(""); //Will be filled with an x or o
-            button[i].setIcon(new ImageIcon("images/blank.jpg")); //Start off with nothing in the button. 
+            button[i].setIcon(new ImageIcon(getClass().getResource("/blank.jpg")));
             button[i].addActionListener(this);
             gamepanel.add(button[i]);
         }
@@ -89,7 +89,6 @@ public class Window extends JFrame implements ActionListener {
         clicked = (JButton) source;
         
         //Find the location of the button clicked on the board
-        
         for (int i = 0; i < button.length; i++) 
         {
             
@@ -98,12 +97,10 @@ public class Window extends JFrame implements ActionListener {
                 btnValue = i;
                 System.out.println("btnValue: " + btnValue + "\n");
                 sendResponse(thisGame.out, btnValue);
-                disableButtons();
-                break;
-            }
                 
+                break;
+            }     
         }   
-        
     }
 
     public void enableButtons()
@@ -145,28 +142,40 @@ public class Window extends JFrame implements ActionListener {
      * On players turn, take the button clicked and add the letter image, set the button type, and disable so it can't be clicked. 
      */
     
-   
+    public void setGreeting(String s)
+    {
+        greeting.setText(s);
+        
+    }
+    
     public void buttonChange(int move, boolean turn)
     {
         System.out.println("buttonChange called for player: " + thisGame.getPlayerNum() + "\n\n");
         if(turn == true)
         {
             button[move].setActionCommand("X");
-            button[move].setIcon(new ImageIcon(playerOneImg));
+            button[move].setIcon(new ImageIcon(getClass().getResource("/xMove.jpg")));
         }
         else if(turn == false)
         {
             button[move].setActionCommand("O");
-            button[move].setIcon(new ImageIcon(playerTwoImg));
+            
+            //URL url = 
+            
+            button[move].setIcon(new ImageIcon(getClass().getResource("/oMove.jpg")));
         }
         else
         {
             System.err.println("ERROR: Not player one or two.");
         }
         
-        
+        didWin = winCheck();
+        didTie = stalemateCheck();
+        validateMove(didWin);
+        validateMove(didTie);
         //this.validate();
-        validateMove(move);
+        disableButtons();
+        
         
         this.repaint();
         
@@ -177,19 +186,25 @@ public class Window extends JFrame implements ActionListener {
     
     public void validateMove(int moveMade)
     {
-        if (moveMade == 11)
+        System.out.append("VALIDATE MOVE: " + moveMade + "\n");
+        
+        if(moveMade == 1)
         {
-            System.out.println("You win!!");
-            JOptionPane.showMessageDialog(null, "You Win!");
-            System.exit(1);
+            if (thisGame.getPlayerNum() == 1)
+            {
+                System.out.println("You win!!");
+                JOptionPane.showMessageDialog(null, "You Win!");
+                System.exit(1);
+            }
+            else if (thisGame.getPlayerNum() == 2)
+            {
+                System.out.println("You lose!!");
+                JOptionPane.showMessageDialog(null, "You Lose!");
+                System.exit(1);
+            }
         }
-        else if (moveMade == 12)
-        {
-            System.out.println("You lose!!");
-            JOptionPane.showMessageDialog(null, "You Lose!");
-            System.exit(1);
-        }
-        else if (moveMade == 13)
+        
+        else if (moveMade == 3)
         {
             System.out.println("Stalemate!");
             JOptionPane.showMessageDialog(null, "Stalemate");
@@ -208,13 +223,13 @@ public class Window extends JFrame implements ActionListener {
         
         for (int i = 0; i <= 7; i++) 
         {
-            if (Window.button[winCombinations[i][0]].getActionCommand().equals(Window.button[winCombinations[i][1]].getActionCommand())
-                    && Window.button[winCombinations[i][1]].getActionCommand().equals(Window.button[winCombinations[i][2]].getActionCommand())
-                    && !Window.button[winCombinations[i][0]].getActionCommand().equals("")) 
+            if (button[winCombinations[i][0]].getActionCommand().equals(button[winCombinations[i][1]].getActionCommand())
+                    && button[winCombinations[i][1]].getActionCommand().equals(button[winCombinations[i][2]].getActionCommand())
+                    && !button[winCombinations[i][0]].getActionCommand().equals("")) 
             {
                 winner = true;
                 System.out.println("Winner is true");
-                break;
+                //break;
             }
         }
 
@@ -225,9 +240,26 @@ public class Window extends JFrame implements ActionListener {
             return 0;
     }    
     
-   /* 
-    private void staleMateCheck() {}
-*/
+   
+    private int stalemateCheck() 
+    {
+        boolean tie = false;
+        
+        for (int i = 0; i < button.length; i++) 
+        {
+            
+            if(button[i].getActionCommand().equals("")) 
+            {
+               tie = false; 
+               return 0;
+               //break;
+            }
+            
+        }   
+        tie = true;
+        return 3;
+    }
+
     private void sendResponse(OutputStream out, int btnValue)
     {
         try 
@@ -267,6 +299,6 @@ public class Window extends JFrame implements ActionListener {
     
 }
 
-/*if listening for other player, when message comes in, find the locatino on the board, disable the button and add an icon. Then check if win.*/
+
 
 

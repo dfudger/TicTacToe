@@ -80,7 +80,7 @@ public class Server extends Thread
               
                 
              //   didWin = winCheck();
-                System.out.println("Wincheck Results: " + didWin + "Turn: " + turn + "\n");
+                //System.out.println("Wincheck Results: " + didWin + "Turn: " + turn + "\n");
                 
                // if(didWin == 1 && turn == 0)
                 //{
@@ -95,7 +95,7 @@ public class Server extends Thread
                 //}    
                 
                 //Make sure not trying to click on a spot taken.
-                if(listOfSpots[in] == 0 && didWin == 0) 
+                if(listOfSpots[in] == 0 )//&& didWin == 0) 
                 {
                     out1.write(in);
                     out2.write(in);

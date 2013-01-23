@@ -130,6 +130,7 @@ public class Game
         System.out.println("\n\n_________________Tic Tac Toe Player____________\n\n");
         System.out.println("My Player Number: " + playerNum);
         
+        thisGUI.setGreeting("Player " + playerNum);
         if(playerNum == 1)
                 myTurn = true; //X goes first
             else
@@ -150,7 +151,7 @@ public class Game
             moveMade = getResponse(in);
             System.out.println("\nMove Sent from Server: " + moveMade);
             
-            didWin = thisGUI.winCheck();
+           /* didWin = thisGUI.winCheck();
             
             if(didWin == 1 && myTurn == true)
             {
@@ -166,7 +167,7 @@ public class Game
                 JOptionPane.showMessageDialog(null, "You Lose!");
                 System.exit(1);
             }
-            
+            */
             
             if (moveMade > -1 && moveMade < 10)
             {
