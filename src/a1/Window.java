@@ -4,13 +4,12 @@
  */
 package a1;
 
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
 *
@@ -18,51 +17,33 @@ import java.io.InputStream;
 */
 public class Window extends JFrame implements ActionListener {
     
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 1L;
     /*****************************  Variables ****************************/
+    Game thisGame;
+    private static final long serialVersionUID = 1L;
     JFrame box;
     public static final int theWIDTH = 300;
     public static final int theHEIGHT = 400;
     JLabel greeting = new JLabel();
     JPanel gamepanel = new JPanel();
-    JButton button[] = new JButton[9];
+    static JButton button[] = new JButton[9];
+    JButton clicked;
+    
+    private int turn; //X's turn first
+    //private boolean winner = false;
     
     
-    private boolean turn; //X's turn first
-    private boolean winner = false;
+    private String playerOneImg = "images/xMove.jpg";
+    private String playerTwoImg = "images/oMove.jpg";
+    
     private int[][] winCombinations = new int[][]{
         {0, 1, 2}, {3, 4, 5}, {6, 7, 8}, //horizontal wins
         {0, 3, 6}, {1, 4, 7}, {2, 5, 8}, //vertical wins
         {0, 4, 8}, {2, 4, 6} //diagonal wins
     };
     
-    private String playerOneImg = "images/xMove.jpg";
-    private String playerTwoImg = "images/oMove.jpg";
-    int playerNum;
-    
     /*****************************  Create Game ****************************/
     public Window() 
     {
-        try
-        {
-            A1.in = A1.socket.getInputStream ();
-            playerNum = A1.in.read ();
-            System.out.print ("Player #" + playerNum);
-            
-            if(playerNum == 1)
-                turn = true; //X goes first
-            else
-                turn = false;
-        }
-        catch (IOException e) 
-        {
-            System.err.println("Couldn't get player number.");
-            System.exit(-1);
-        }
-        
         
         //Create window
         box = new JFrame();
@@ -92,7 +73,7 @@ public class Window extends JFrame implements ActionListener {
             button[i].addActionListener(this);
             gamepanel.add(button[i]);
         }
-
+        System.out.println("Button Length: " + button.length + "\n");
         box.setVisible(true);
     }
 
@@ -100,99 +81,190 @@ public class Window extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent ae) 
     {
         
-        int inbyte;
-        int btnValue = 0;
-        boolean winner = false;
-        String emptyButton = " ";
-        String[] toFile = new String[9];
-        String currentTurn;
         
+        int btnValue = -1;
+        
+        //Get the button that was clicked from the GUI
         Object source = ae.getSource();
-
-        JButton clicked = (JButton) source;
-        //System.out.println("Clicked: " + clicked);
+        clicked = (JButton) source;
         
-        for(int i=0; i < button.length; i++)
+        //Find the location of the button clicked on the board
+        
+        for (int i = 0; i < button.length; i++) 
         {
+            
             if(button[i] == clicked) 
             {
                 btnValue = i;
-                System.out.println(btnValue);
+                System.out.println("btnValue: " + btnValue + "\n");
+                sendResponse(thisGame.out, btnValue);
+                disableButtons();
                 break;
             }
                 
-        }
+        }   
         
-        if (turn == true)  //It's player 1's turn
-        {
-            clicked.setActionCommand("X");
-            clicked.setIcon(new ImageIcon(playerOneImg));
-            
-            //System.out.println(clicked.getIcon());
-            
-            clicked.removeActionListener(this);
-            
-            try 
-            {
-                A1.out =  A1.socket.getOutputStream ();
-                A1.out.write(btnValue);
+    }
 
-            } 
-            catch (IOException e) 
-            {
-                System.err.println("Couldn't write to server.");
-                System.exit(-1);
-            }
-            
-            turn = false;
-            greeting.setText("Player 2's Turn");
-        }
-        /*************************** Player Two ********************************/
-        else //if (turn == false) { //It's player 2's turn
+    public void enableButtons()
+    {
+        //For every button in array
+        for (int i = 0; i < button.length; i++) 
         {
-            try
+            //If the action command is ""
+            if(button[i].getActionCommand().equals(""))
             {
-                A1.in = A1.socket.getInputStream ();
-                inbyte = A1.in.read ();
-                System.out.print (inbyte + "\n");
-                
-            }
-            catch (IOException e) 
-            {
-                System.err.println("Couldn't read p2 move from server.");
-                System.exit(-1);
-            }
-            
-            
-            clicked.setActionCommand("O");
-            clicked.setIcon(new ImageIcon(playerTwoImg));
-        
-            //System.out.println(clicked.getIcon());
-            clicked.removeActionListener(this);
-            turn = true;
-            greeting.setText("Player 1's Turn");
+                button[i].addActionListener(this);
+            }    
+                //enable button
         }
-
-            
         
-        for (int i = 0; i <= 7; i++) {
-            if (button[winCombinations[i][0]].getActionCommand().equals(button[winCombinations[i][1]].getActionCommand())
-                    && button[winCombinations[i][1]].getActionCommand().equals(button[winCombinations[i][2]].getActionCommand())
-                    && !button[winCombinations[i][0]].getActionCommand().equals("")) {
+    }
+
+    public void disableButtons()
+    {
+        //For every button in array
+        for (int i = 0; i < button.length; i++) 
+        {
+            //If the action command is ""
+            //if(button[i].getActionCommand().equals(""))
+            //{
+                button[i].removeActionListener(this);
+            //}    
+                //enable button
+        }
+        
+    }
+    
+    public void setGame(Game currGame)
+    {
+        thisGame = currGame;
+    }
+    
+    /*
+     * On players turn, take the button clicked and add the letter image, set the button type, and disable so it can't be clicked. 
+     */
+    
+   
+    public void buttonChange(int move, boolean turn)
+    {
+        System.out.println("buttonChange called for player: " + thisGame.getPlayerNum() + "\n\n");
+        if(turn == true)
+        {
+            button[move].setActionCommand("X");
+            button[move].setIcon(new ImageIcon(playerOneImg));
+        }
+        else if(turn == false)
+        {
+            button[move].setActionCommand("O");
+            button[move].setIcon(new ImageIcon(playerTwoImg));
+        }
+        else
+        {
+            System.err.println("ERROR: Not player one or two.");
+        }
+        
+        
+        //this.validate();
+        validateMove(move);
+        
+        this.repaint();
+        
+        
+        //button.removeActionListener(this);
+        
+    }
+    
+    public void validateMove(int moveMade)
+    {
+        if (moveMade == 11)
+        {
+            System.out.println("You win!!");
+            JOptionPane.showMessageDialog(null, "You Win!");
+            System.exit(1);
+        }
+        else if (moveMade == 12)
+        {
+            System.out.println("You lose!!");
+            JOptionPane.showMessageDialog(null, "You Lose!");
+            System.exit(1);
+        }
+        else if (moveMade == 13)
+        {
+            System.out.println("Stalemate!");
+            JOptionPane.showMessageDialog(null, "Stalemate");
+            System.exit(1);
+        }
+        else
+        {
+            System.out.println("No win yet, keep going...\n");
+            return;
+        }
+    }
+    
+    public int winCheck()
+    {
+        boolean winner = false;
+        
+        for (int i = 0; i <= 7; i++) 
+        {
+            if (Window.button[winCombinations[i][0]].getActionCommand().equals(Window.button[winCombinations[i][1]].getActionCommand())
+                    && Window.button[winCombinations[i][1]].getActionCommand().equals(Window.button[winCombinations[i][2]].getActionCommand())
+                    && !Window.button[winCombinations[i][0]].getActionCommand().equals("")) 
+            {
                 winner = true;
                 System.out.println("Winner is true");
+                break;
             }
         }
 
         if (winner) 
+            return 1;
+        
+        else
+            return 0;
+    }    
+    
+   /* 
+    private void staleMateCheck() {}
+*/
+    private void sendResponse(OutputStream out, int btnValue)
+    {
+        try 
         {
-            greeting.setText("Winner!");
+            System.out.print("Double Check btnValue: " + btnValue + "\n");
+            out = thisGame.socket.getOutputStream ();
+            out.write(btnValue);
+            System.out.print("Sent btnValue\n\n");
+        } 
+        catch (IOException e) 
+        {
+            System.err.println("Couldn't write to server.");
+            System.exit(-1);
         }
-            
-            //If all disabled, stalemate. 
     }
+    
+    public static int gameDialog()
+    {
+        Object[] options = 
+        {   
+            "Exit", "Join Game","New Game"
+        };
 
-   	
+        
+        
+        int n = JOptionPane.showOptionDialog(null,
+            "Welcome to Tic Tac Toe. Choose an option:",
+            "Tic Tac Toe",
+            JOptionPane.YES_NO_CANCEL_OPTION,
+            JOptionPane.QUESTION_MESSAGE,
+            null,
+            options,
+            options[2]);
+        
+        return n;
+    }
+    
 }
 
 /*if listening for other player, when message comes in, find the locatino on the board, disable the button and add an icon. Then check if win.*/
