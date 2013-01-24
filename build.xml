@@ -1,4 +1,4 @@
-<project name="a1" basedir="." default="run">
+<project name="CIS3760_TicTacToe" basedir="." default="run">
 
     <property name="src.dir"     value="src"/>
 

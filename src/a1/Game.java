@@ -1,6 +1,15 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * 
+ * TicTacToe - Game.java
+ * CIS*3760 Assignment One
+ * University of Guelph
+ * 
+ * Author: Danielle Fudger 0621496
+ * Contact: dfudger@uoguelph.ca
+ * Date: Januray 23, 2013
+ * 
+ * This is a java based TicTacToe game for two players. For more information, please see the README. 
+ * 
  */
 package a1;
 
@@ -11,7 +20,8 @@ import java.net.Socket;
 import javax.swing.JOptionPane;
 
 /**
- *
+ * The Game class contains the client side logic for the tictactoe game.
+ * It controls whose turn it is, if the player should make a move, or wait for the other player.
  * @author dfudger
  */
 public class Game 
@@ -20,23 +30,28 @@ public class Game
     Socket socket;
     InputStream in;
     OutputStream out;
-    String p2IP;
-    String server_host = "localhost";
-    String player = "";
+    String p2IP, server_host = "localhost", player = "";
     private int playerNum;
-    int moveMade = -1;
-    int didWin = 0;
+    int moveMade = -1, didWin = 0;
     
+    /**
+     * Within the constructor, the gui is passed in as a parameter so the game object can send data to their specific Window object.
+     * @param gameBoard
+     */
     public Game(Window gameBoard)
     {
         
     }
 
+    /**
+     * This function calls gameDialog() that asks the user to choose an option, 
+     * based on that option, the player either created a server, or is asked to give them IP and join one.
+     * 
+     * Once the user had connected to the server and is assigned a player number (1 or 2) the game is ready to begin.
+     */
     public void startGame()
     {
-        int server_port = 7099;
-        int inbyte;
-        int n = -1;
+        int server_port = 7099, n = -1;
         
         System.out.println("Opening game dialog");
         n = Window.gameDialog();
@@ -44,7 +59,7 @@ public class Game
         if(n == 0) //Cancel
             System.exit(1);
         
-        else if(n == 2) 
+        else if(n == 2) //Create a game
         {
             player = "player1";
             (new Server()).start();
@@ -52,27 +67,23 @@ public class Game
             //Save the IP address for the server player1
             server_host = Server.getIP();
             System.out.println("Servers IP:"+ server_host);
-            JOptionPane.showMessageDialog(null, "Please give this IP to player 2:\n\n" + server_host + "\n");
-            //NOTE: Need to display in a window.
-            
-            
+            JOptionPane.showMessageDialog(null, "Please give this IP to player 2:\n\n" + server_host + "\n");            
         }
-        else 
+        
+        else //Join a game, ask the user to input their IP address for the game and save it to the server_host to connect with the other player
         {
             player = "player2";
             server_host = (String)JOptionPane.showInputDialog(null, "Enter player ones IP address:\n", "Players IP", JOptionPane.PLAIN_MESSAGE, null,null,null);
-            System.out.print("Entered address: " + server_host);
-            if ((server_host != null) && (server_host.length() > 0)) 
-            {
-                //NOTE: Add error checking.
-            }    
+            //System.out.print("Entered address: " + server_host); 
         }
        
         try
         {
             socket = new Socket (server_host, server_port);
             if(socket != null)
-                System.out.println("Connected to server.");
+            {
+                //System.out.println("Connected to server.");
+            }
             else 
             {
                 System.out.println("ERROR: Could not connect to server.");
@@ -88,15 +99,12 @@ public class Game
             System.exit(-1);
         }
         
-        
-        //Find out what your player number is
+        //Find out what your player number is, first read from the server
         try
         {
             in = socket.getInputStream ();
             playerNum = in.read ();
-            System.out.print ("Player #" + playerNum);
-            
-            
+            //System.out.print ("Player #" + playerNum);
         }
         catch (IOException e) 
         {
@@ -104,35 +112,50 @@ public class Game
             System.exit(-1);
         }
         
-        setPlayerNum(playerNum);
+        setPlayerNum(playerNum); //Sent to the Window class, informs the user of what player they are.
     }
     
+    /*
+     * Sets the player number based on the player parameter
+     */
     private void setPlayerNum(int player)
     {
         playerNum = player;
     }
     
+    /**
+     * This functions returns the playerNumber saved for their game.
+     * @return playerNum
+     */
     public int getPlayerNum()
     {
         return playerNum;
     }
     
+    /**
+     * This function passes the game object back to the gui (Window class)
+     * @return Game object
+     */
     public Game setGame() 
     {
         return this;
     }
     
+    /**
+     * This function controls the game play for the client. If it is their turn to move
+     * then they can click on a button on the game board, that response is sent to the server
+     * and the game board waits for a response from the server, after which it will add an X to that 
+     * position on the board. If it is not their turn, the game waits for a response from the server
+     * telling them what move the other player made.
+     */
     public void playGame() 
     {
         boolean gameOver = false;
         boolean myTurn = false;
         
-        System.out.println("\n\n_________________Tic Tac Toe Player____________\n\n");
-        System.out.println("My Player Number: " + playerNum);
-        
         thisGUI.setGreeting("Player " + playerNum);
         if(playerNum == 1)
-                myTurn = true; //X goes first
+                myTurn = true; //Player one goes first
             else
                 myTurn = false;
         
@@ -142,95 +165,46 @@ public class Game
             if(myTurn == true)
             {
                System.out.println("My Turn.\n");
-                //Enable buttons
                thisGUI.enableButtons();
                System.out.println("Buttons enabled");
-               //thisGUI.setText("Your Turn");
             }
-            //thisGUI.disableButtons();
+            
             moveMade = getResponse(in);
-            System.out.println("\nMove Sent from Server: " + moveMade);
-            
-           /* didWin = thisGUI.winCheck();
-            
-            if(didWin == 1 && myTurn == true)
-            {
-                //You win!
-                System.out.println("You win!!");
-                JOptionPane.showMessageDialog(null, "You Win!");
-                System.exit(1);
-            }
-            
-            if(didWin == 1 && myTurn == false)
-            {
-                System.out.println("You lose!!");
-                JOptionPane.showMessageDialog(null, "You Lose!");
-                System.exit(1);
-            }
-            */
             
             if (moveMade > -1 && moveMade < 10)
             {
-                //System.out.println("Move made: " + moveMade);
                 thisGUI.buttonChange(moveMade, myTurn);
                 
                 if(myTurn == true)
                     myTurn = false;
                 else
                     myTurn = true;
-
             }
-            /*else if (moveMade == 11)
-            {
-                System.out.println("You win!!");
-                JOptionPane.showMessageDialog(null, "You Win!");
-                return;
-            }
-            else if (moveMade == 12)
-            {
-                System.out.println("You lose!!");
-                JOptionPane.showMessageDialog(null, "You Lose!");
-                return;
-            }
-            else if (moveMade == 13)
-            {
-                System.out.println("Stalemate!");
-                JOptionPane.showMessageDialog(null, "Stalemate");
-                return;
-            }
-            else
-            {
-                System.out.println("ERROR: Invalid move.");
-                System.exit(-1);
-            }
-             
-             */
-                
-            //Either not my turn or sent click
-            //Listen for message from server about what button pressed
-            //If not a error response:
-                //Update GUI (method)
-            
         }
     }
 
-
-public void setGUI(Window currGUI)
+    /**
+     * This function is passed the Window object created in the main and sets the object to the one within this class.
+     * @param currGUI
+     */
+    public void setGUI(Window currGUI)
     {
         thisGUI = currGUI;
     }
 
-
-  private int getResponse(InputStream in) 
+    /*
+     * This function listens for a message from the server. This integer read
+     * is then returned to the calling function.
+     * 
+     */
+    private int getResponse(InputStream in) 
     {
         int inbyte = -1;
         
         try
         {
-            //in =  socket.getInputStream ();
-            inbyte = in.read(); //readint
-
-            System.out.print ("Read from server: " + inbyte + "\n");
+            inbyte = in.read(); //read integer from server
+            //System.out.print ("Read from server: " + inbyte + "\n");
         }
         catch (IOException e) 
         {
