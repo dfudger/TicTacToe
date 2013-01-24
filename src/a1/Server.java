@@ -117,7 +117,7 @@ public class Server extends Thread
     /**
      * This function gets the players IP address that the server will be hosted
      * and send it back to the user.
-     * @return
+     * @return IP address
      */
     public static String getIP()
     {
